@@ -54,4 +54,21 @@ describe('template catalog', () => {
     expect(queries.length).toBeLessThanOrEqual(8);
     expect(queries.every((item) => item.safetyLevel === 'low')).toBe(true);
   });
+
+  it('offers only dedicated passive-intelligence templates to URLScan and Shodan', () => {
+    const scope = parseScope('*.example.com');
+    const selected = templatesForPacks(['domain-discovery']);
+    const urlscan = compileQueries(scope, selected, { provider: 'urlscan' });
+    const shodan = compileQueries(scope, selected, { provider: 'shodan' });
+    expect(urlscan.map((item) => item.templateId)).toEqual(['domain-urlscan-observations']);
+    expect(shodan.map((item) => item.templateId)).toEqual(['domain-shodan-observations']);
+    expect(urlscan[0]).toMatchObject({
+      resultPolicy: 'fixed-hosts',
+      resultHostAllowlist: ['urlscan.io'],
+    });
+    expect(shodan[0]).toMatchObject({
+      resultPolicy: 'fixed-hosts',
+      resultHostAllowlist: ['shodan.io'],
+    });
+  });
 });

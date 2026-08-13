@@ -41,4 +41,6 @@ Run `npm run dev:api`. In the web app's **Providers** page, use `http://127.0.0.
 - `UNAUTHORIZED`: confirm the session token exactly matches `APP_ACCESS_TOKEN`.
 - CORS error: add the exact planner origin to `CORS_ALLOWLIST`; wildcards are rejected.
 - Brave unavailable: set `BRAVE_SEARCH_API_KEY` server-side, or use the mock provider.
+- URLScan unavailable: set `URLSCAN_API_KEY` server-side; ReconForge uses search only and never submits URLs.
+- Shodan unavailable: set `SHODAN_API_KEY` server-side; ReconForge uses host search only and never requests scans.
 - GitHub Pages route issue: use the hash route (`/#/planner`); the application intentionally uses `HashRouter`.

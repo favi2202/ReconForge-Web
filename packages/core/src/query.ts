@@ -190,5 +190,5 @@ export function browserSearchUrl(provider: ProviderId, query: string): string {
   if (provider === 'bing-link') return `https://www.bing.com/search?q=${encoded}`;
   if (provider === 'duckduckgo-link') return `https://duckduckgo.com/?q=${encoded}`;
   if (provider === 'brave') return `https://search.brave.com/search?q=${encoded}`;
-  throw new QueryCompileError('The mock provider does not have a browser search page.');
+  throw new QueryCompileError('This connected provider does not have a browser query page.');
 }

@@ -1,5 +1,5 @@
 import { getDomain } from 'tldts';
-import { isHostnameWithinBoundary, isUrlInScope } from './scope.js';
+import { isHostnameInScope, isHostnameWithinBoundary, isUrlInScope } from './scope.js';
 import type { CompiledQuery, Finding, ParsedScope, Provenance, ReviewPriority } from './types.js';
 
 const TRACKING_PARAMETERS = new Set([
@@ -21,6 +21,8 @@ export interface RawProviderResult {
   title?: string;
   snippet?: string;
   publishedAt?: string;
+  /** Provider-asserted subject for evidence links hosted outside the target scope. */
+  subjectHostname?: string;
 }
 
 export function isProviderResultAllowed(
@@ -38,6 +40,10 @@ export function isProviderResultAllowed(
     return false;
   }
   if (query.resultPolicy === 'in-scope') return isUrlInScope(result.url, scope);
+  const subjectHostname = result.subjectHostname?.toLowerCase().replace(/\.$/u, '');
+  if (subjectHostname && !isHostnameInScope(subjectHostname, scope)) return false;
+  if ((query.provider === 'urlscan' || query.provider === 'shodan') && !subjectHostname)
+    return false;
   const evidence =
     `${parsedUrl.pathname} ${parsedUrl.search} ${result.title ?? ''} ${result.snippet ?? ''}`.toLowerCase();
   const escapedScope = scope.value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
@@ -80,6 +86,7 @@ export function normalizeProviderResult(
 ): Finding {
   const canonicalUrl = canonicalizeUrl(raw.url);
   const url = new URL(canonicalUrl);
+  const hostname = raw.subjectHostname?.toLowerCase().replace(/\.$/u, '') ?? url.hostname;
   const provenance: Provenance = {
     provider,
     queryId: query.id,
@@ -92,8 +99,8 @@ export function normalizeProviderResult(
     canonicalUrl,
     title: cleanText(raw.title ?? '(untitled result)', 500),
     snippet: cleanText(raw.snippet ?? '', 4000),
-    hostname: url.hostname,
-    rootDomain: getDomain(url.hostname, { allowPrivateDomains: true }),
+    hostname,
+    rootDomain: getDomain(hostname, { allowPrivateDomains: true }),
     source: provider,
     category: query.category,
     reviewPriority: calculateReviewPriority(query, raw),

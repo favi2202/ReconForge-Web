@@ -108,6 +108,67 @@ describe('result normalization', () => {
     expect(isProviderResultAllowed({ url: 'https://github.com/a' }, fixed, exact)).toBe(false);
   });
 
+  it('requires a structured in-scope subject for URLScan and Shodan evidence links', () => {
+    const scope = parseScope('*.example.com', ['legacy.example.com']);
+    const fixed = {
+      ...query,
+      provider: 'urlscan' as const,
+      resultPolicy: 'fixed-hosts' as const,
+      resultHostAllowlist: ['urlscan.io'],
+    };
+    expect(
+      isProviderResultAllowed(
+        {
+          url: 'https://urlscan.io/result/id/',
+          title: 'portal.example.com',
+          subjectHostname: 'portal.example.com',
+        },
+        fixed,
+        scope,
+      ),
+    ).toBe(true);
+    expect(
+      isProviderResultAllowed(
+        { url: 'https://urlscan.io/result/id/', title: 'example.com' },
+        fixed,
+        scope,
+      ),
+    ).toBe(false);
+    expect(
+      isProviderResultAllowed(
+        {
+          url: 'https://urlscan.io/result/id/',
+          title: 'example.com.attacker.test',
+          subjectHostname: 'example.com.attacker.test',
+        },
+        fixed,
+        scope,
+      ),
+    ).toBe(false);
+    expect(
+      isProviderResultAllowed(
+        {
+          url: 'https://urlscan.io/result/id/',
+          title: 'legacy.example.com',
+          subjectHostname: 'legacy.example.com',
+        },
+        fixed,
+        scope,
+      ),
+    ).toBe(false);
+    const normalized = normalizeProviderResult(
+      {
+        url: 'https://urlscan.io/result/id/',
+        title: 'Portal',
+        subjectHostname: 'portal.example.com',
+      },
+      fixed,
+      'urlscan',
+    );
+    expect(normalized.hostname).toBe('portal.example.com');
+    expect(normalized.canonicalUrl).toBe('https://urlscan.io/result/id');
+  });
+
   it('requires external-reference evidence and never reclassifies excluded in-boundary hosts', () => {
     const scope = parseScope('*.example.com', ['legacy.example.com']);
     const external = { ...query, resultPolicy: 'external-reference' as const };

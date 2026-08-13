@@ -3,7 +3,27 @@ import { loadConfig } from './config.js';
 
 describe('API configuration', () => {
   it('defaults to disabled connected mode', () => {
-    expect(loadConfig({}).connectedMode).toBe(false);
+    const config = loadConfig({});
+    expect(config.connectedMode).toBe(false);
+    expect(config.providerDailyQueryLimits).toEqual({
+      mock: 200,
+      brave: 200,
+      urlscan: 100,
+      shodan: 25,
+    });
+  });
+
+  it('loads provider keys without exposing them to the browser configuration', () => {
+    const config = loadConfig({
+      URLSCAN_API_KEY: 'urlscan-private-test-key-1234',
+      SHODAN_API_KEY: 'shodan-private-test-key-5678',
+      URLSCAN_DAILY_QUERY_LIMIT: '12',
+      SHODAN_DAILY_QUERY_LIMIT: '7',
+    });
+    expect(config.urlscanApiKey).toBe('urlscan-private-test-key-1234');
+    expect(config.shodanApiKey).toBe('shodan-private-test-key-5678');
+    expect(config.providerDailyQueryLimits.urlscan).toBe(12);
+    expect(config.providerDailyQueryLimits.shodan).toBe(7);
   });
 
   it('requires a long token when enabled and rejects wildcard CORS', () => {

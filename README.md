@@ -12,13 +12,13 @@ ReconForge Web is a local-first passive reconnaissance planner and analyst works
 
 ![ReconForge Web dashboard](docs/screenshots/dashboard.png)
 
-## What works in v0.1.0
+## What works in v0.2.0
 
 - Public planner with no API key: strict scopes, 14 typed query packs, explanations, browser search deep links, manual imports, IndexedDB persistence, and six export formats.
 - Exact root domain (`example.com`), exact subdomain (`sub.example.com`), subdomain tree (`*.example.com`), public suffix (`*.uz`), and a manual list of up to 25 exact authorized domains.
 - Safety-aware compilation: suffix scopes have an eight-query hard cap, low-risk packs only, mandatory preview, no connected execution, and no Sensitive Exposure Review.
 - Optional connected owner API: disabled by default, bearer-authenticated, strict CORS, IP and owner quotas, fixed providers, cancellation, timeouts, retry backoff, bounded results, and redacted logs.
-- Offline mock provider for the complete run workflow plus an official Brave Search API adapter.
+- Offline mock provider plus bounded Brave Search, URLScan historical-search, and Shodan host-search adapters.
 - Results table with host/source/category/date/priority filters, canonical-URL deduplication, per-host context, notes, tags, analyst status, false-positive marking, timestamps, and safe links.
 - JSON, formula-safe CSV, Markdown, escaped standalone HTML, query-list, and scope-manifest exports.
 - Synthetic `example.com` demonstration, first-run tour, responsive layouts, keyboard focus states, and automated WCAG checks.
@@ -90,6 +90,8 @@ CONNECTED_MODE=true
 APP_ACCESS_TOKEN=
 CORS_ALLOWLIST=http://localhost:5173
 BRAVE_SEARCH_API_KEY=
+URLSCAN_API_KEY=
+SHODAN_API_KEY=
 ```
 
 Paste the generated token after `APP_ACCESS_TOKEN=`. Known placeholder and low-diversity values are rejected at startup.
@@ -116,6 +118,8 @@ flowchart LR
   B -->|re-parse + recompile known IDs| C
   B --> M[Offline mock]
   B --> R[Brave Search API\nfixed endpoint]
+  B --> U[URLScan search API\nno submissions]
+  B --> H[Shodan host search\nno scan requests]
   A -. browser deep link .-> S[Google / Bing / DuckDuckGo / Brave]
 ```
 
@@ -148,7 +152,7 @@ Please report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 
 JSON exports use schema version `1.0`. The root object contains project identity, authorization statement, primary and optional additional scopes, selected pack IDs, compiled queries, normalized findings, and timestamps. Each finding carries canonical URL, hostname/root domain, category, review priority, analyst status, notes, tags, and one or more provenance records (`provider`, redacted/standard query, query ID, collection timestamp).
 
-The v0.1 UI supports validated project-JSON import plus scoped manual URL-result import. Project files are capped at 5 MB and 5,000 findings, with strict unknown-key rejection and server-derived scope authority.
+The v0.2 UI supports validated project-JSON import plus scoped manual URL-result import. Project files are capped at 5 MB and 5,000 findings, with strict unknown-key rejection and server-derived scope authority.
 
 ![Normalized results workspace](docs/screenshots/results.png)
 
@@ -175,7 +179,7 @@ The v0.1 UI supports validated project-JSON import plus scoped manual URL-result
 ## Known limitations
 
 - Search indexes are incomplete and time-dependent; browser results may differ by region and session.
-- Brave Search is the only live connected search adapter in v0.1; Google, Bing, and DuckDuckGo are browser deep links.
+- Connected adapters are Brave web search, URLScan historical search, and Shodan host search. URLScan submission and Shodan on-demand scanning are intentionally absent; Google, Bing, and DuckDuckGo remain browser deep links.
 - Connected run state and quotas are in memory, appropriate for a single-instance owner service. Multi-instance deployments need a shared trusted limiter/run store.
 - Manual lists are planner-only for connected collection so each exact domain has an independent authorization and budget decision.
 - IndexedDB projects remain in the current browser profile unless exported.

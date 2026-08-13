@@ -4,7 +4,7 @@
 
 The `pages.yml` workflow builds with `--base=/ReconForge-Web/` and deploys `apps/web/dist`. Planner mode needs no secrets. Hash routing makes refreshes safe under the repository subpath.
 
-Repository Pages settings must use **GitHub Actions** as the source. Do not define `BRAVE_SEARCH_API_KEY` or `APP_ACCESS_TOKEN` as frontend build variables.
+Repository Pages settings must use **GitHub Actions** as the source. Do not define `BRAVE_SEARCH_API_KEY`, `URLSCAN_API_KEY`, `SHODAN_API_KEY`, or `APP_ACCESS_TOKEN` as frontend build variables.
 
 GitHub Pages does not provide repository-controlled HTTP response headers. The planner therefore ships a restrictive meta CSP, but `frame-ancestors` is not effective from a meta policy. Deploy behind a header-capable static host or reverse proxy and set `Content-Security-Policy: frame-ancestors 'none'` when clickjacking resistance is required.
 
@@ -21,7 +21,7 @@ The multi-stage `Dockerfile` runs as an unprivileged user. Compose additionally 
 
 ```bash
 cp .env.example .env
-# Set CONNECTED_MODE=true, APP_ACCESS_TOKEN, exact CORS origin, and optional Brave key.
+# Set CONNECTED_MODE=true, APP_ACCESS_TOKEN, an exact CORS origin, and optional provider keys.
 docker compose up --build -d
 curl http://127.0.0.1:8787/health
 ```
@@ -30,7 +30,7 @@ Put an HTTPS reverse proxy in front of any remote deployment. Configure only the
 
 ## Statelessness and scaling
 
-The v0.1 service keeps a bounded maximum of 100 recent run records in memory and has no cloud database. This is appropriate for a single owner instance. Do not horizontally scale it without replacing the in-memory rate limiter and run store with an authenticated shared store, or quotas and cancellation state will be instance-local.
+The v0.2 service keeps a bounded maximum of 100 recent run records in memory and has no cloud database. This is appropriate for a single owner instance. Do not horizontally scale it without replacing the in-memory rate limiter and run store with an authenticated shared store, or quotas and cancellation state will be instance-local.
 
 ## Operational checks
 
@@ -48,4 +48,4 @@ The v0.1 service keeps a bounded maximum of 100 recent run records in memory and
 3. Inspect desktop/mobile screenshots and the final dependency audit.
 4. Push `main`; verify both CI and Pages workflows.
 5. Open the live planner and exercise the synthetic demo.
-6. Tag and publish `v0.1.0` only after CI and Pages are green.
+6. Tag and publish a semantic version only after CI and Pages are green.

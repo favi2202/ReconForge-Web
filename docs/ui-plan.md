@@ -1,6 +1,6 @@
 # ReconForge Web UI design reference
 
-This document preserves the product-design checklist used during implementation. The shipped v0.1.0 application uses compact hash routes (`/new`, `/planner`, `/run`, `/results`, and `/reports`) with the active project owned by the local project library, rather than the nested route sketches below. Unchecked items are forward-looking refinements, not claims about the current release; current behavior is documented in the README and architecture guide.
+This document preserves the product-design checklist used during implementation. The shipped v0.2.0 application uses compact hash routes (`/new`, `/planner`, `/run`, `/results`, and `/reports`) with the active project owned by the local project library, rather than the nested route sketches below. Unchecked items are forward-looking refinements, not claims about the current release; current behavior is documented in the README and architecture guide.
 
 ## Foundation
 

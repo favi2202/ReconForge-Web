@@ -32,6 +32,7 @@ interface TemplateSeed {
   authorization?: boolean;
   resultPolicy?: QueryTemplate['resultPolicy'];
   resultHostAllowlist?: string[];
+  providers?: ProviderId[];
   explanation: string;
 }
 
@@ -43,7 +44,7 @@ function make(seed: TemplateSeed): QueryTemplate {
     description: seed.description,
     category: seed.category,
     supportedScopeTypes: seed.scopes,
-    providers: ALL_PROVIDERS,
+    providers: seed.providers ?? ALL_PROVIDERS,
     template: seed.template,
     variables: [...seed.template.matchAll(/\{\{([^}]+)\}\}/gu)].map((match) => match[1] ?? ''),
     tags: seed.tags,
@@ -93,6 +94,36 @@ export const templates: QueryTemplate[] = [
     authorization: true,
     explanation:
       'Flags indexed URLs containing common non-production labels as leads for authorized review.',
+  }),
+  make({
+    id: 'domain-urlscan-observations',
+    packId: 'domain-discovery',
+    name: 'URLScan observations',
+    description: 'Find existing URLScan observations without submitting a new scan.',
+    category: 'passive-intelligence',
+    scopes: DOMAIN_SCOPES,
+    providers: ['urlscan'],
+    template: '{{scope}}',
+    tags: ['urlscan', 'historical-observation'],
+    resultPolicy: 'fixed-hosts',
+    resultHostAllowlist: ['urlscan.io'],
+    explanation:
+      'Searches URLScan historical metadata only; ReconForge never submits the target for scanning.',
+  }),
+  make({
+    id: 'domain-shodan-observations',
+    packId: 'domain-discovery',
+    name: 'Shodan host observations',
+    description: 'Find existing Shodan service observations without requesting a scan.',
+    category: 'passive-intelligence',
+    scopes: DOMAIN_SCOPES,
+    providers: ['shodan'],
+    template: '{{scope}}',
+    tags: ['shodan', 'service-observation'],
+    resultPolicy: 'fixed-hosts',
+    resultHostAllowlist: ['shodan.io'],
+    explanation:
+      "Searches Shodan's existing host index only; ReconForge never invokes on-demand scanning.",
   }),
   make({
     id: 'docs-common-types',
@@ -375,7 +406,13 @@ export const packs: QueryPack[] = [
     description: 'Baseline indexed-host and environment discovery.',
     safetyLevel: 'low',
     enabledByDefault: true,
-    templateIds: ['domain-indexed-hosts', 'domain-www-exclusion', 'domain-environment-labels'],
+    templateIds: [
+      'domain-indexed-hosts',
+      'domain-www-exclusion',
+      'domain-environment-labels',
+      'domain-urlscan-observations',
+      'domain-shodan-observations',
+    ],
   },
   {
     id: 'public-documents',

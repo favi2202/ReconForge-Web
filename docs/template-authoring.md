@@ -8,11 +8,13 @@ Each template has a stable ID, pack ID, name, description, category, supported s
 
 Built-in variables are:
 
-- `{{scope}}`: provider-specific `site:` boundary plus validated exclusions.
-- `{{domain}}`: registrable domain, or the public suffix for a suffix scope.
+- `{{scope}}`: provider-specific boundary plus validated exclusions (`site:`, `page.domain`, or `hostname`).
+- `{{domain}}`: normalized declared scope hostname; it never broadens a subdomain to its registrable parent.
 - `{{host}}`: normalized hostname without `*.`.
 
 Do not concatenate user-entered operators into catalog strings. Custom visual-builder values use a separate allowlisted grammar that rejects operator names and special syntax.
+
+URLScan and Shodan use dedicated templates rather than general web-search strings. New connected providers must define their own fixed endpoint, query grammar, response schema, result-location policy, quota, and adversarial scope tests.
 
 ## Safety classification
 

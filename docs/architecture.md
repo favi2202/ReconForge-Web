@@ -1,6 +1,6 @@
 # ReconForge Web product and UX architecture
 
-- Status: implementation blueprint for v0.1.0
+- Status: implementation blueprint, updated for v0.2.0
 - Primary client: React + TypeScript + Vite
 - Primary deployment: static GitHub Pages planner, optional independently deployed owner API
 

@@ -5,7 +5,7 @@ Research snapshot: **2026-08-12**. This is a design study, not a dependency or c
 ## Executive conclusions
 
 - Build a planner-first product. A static browser application can compile, explain, save, and export queries without putting an owner's search credentials behind an anonymous public proxy.
-- Use **Brave Search API** for the first connected general-web provider. It currently documents a real web-results API, server-side subscription-token authentication, pagination, and the operators needed by the initial query packs.
+- Use **Brave Search API** for connected general-web results, **URLScan Search API** for existing historical scan metadata, and **Shodan Host Search API** for existing service observations. Keep the latter two on dedicated provider-native templates rather than translating general web-search operators.
 - Keep Google, Bing, and DuckDuckGo as user-initiated browser deep links. Google's Custom Search JSON API is closed to new customers and ends for existing customers on 2027-01-01; Microsoft's Bing Search APIs were retired on 2025-08-11; no official DuckDuckGo general-web-results API was located.
 - Treat scope, provenance, and collection budget as first-class data. The strongest architectural ideas recur across Amass, BBOT, Subfinder, Recon-ng, and the reporting platforms: typed observations, modular collectors, per-project workspaces, explicit source chains, normalized records, and deterministic deduplication.
 - Keep passive discovery separate from validation. Several reviewed tools combine passive OSINT with brute force, port scanning, fuzzing, crawling, screenshots, or vulnerability scanners. Those capabilities are intentionally outside ReconForge Web v1.
@@ -173,17 +173,19 @@ The deep-link flow must construct a normal search URL in the browser and require
 - `crt.sh` is useful interactively, but a stable, official public API contract and production limits were not found in its primary documentation during this review. Do not make its commonly used JSON query behavior a required v1 dependency.
 - Google Hacking Database is a third-party query corpus. Its individual entries and collection terms were not license-audited here, so no GHDB content will be imported.
 - SearXNG instances and unofficial search libraries are not official-provider APIs. Their technical availability does not grant permission to proxy or scrape an upstream engine.
-- Shodan, Censys, SecurityTrails, VirusTotal, and similar services are deliberately deferred. A long provider list is less valuable than one thoroughly bounded official search adapter plus focused CT/RDAP/archive/DNS enrichments.
+- Censys, SecurityTrails, VirusTotal, and similar services remain deferred. Shodan is included only through its official existing-host search endpoint with an explicit field allowlist, page-one/result caps, conservative credit budget, and no on-demand scan method. URLScan is similarly search-only; no scan submission is implemented.
 
-## Shipped v1 providers and bounded roadmap
+## Shipped providers and bounded roadmap
 
-The shipped v0.1 provider surface is intentionally small:
+The shipped v0.2 provider surface remains intentionally small:
 
 1. `browser-google`, `browser-bing`, `browser-duckduckgo`, and `browser-brave`: local URL compilation only; no credentials and no result fetching.
 2. `mock-search`: deterministic synthetic responses for development, demonstration, unit/integration tests, and end-to-end tests.
-3. `brave-search`: authenticated owner-mode adapter and the only automatic general-web search provider in v0.1.
+3. `brave-search`: authenticated owner-mode general-web search adapter.
+4. `urlscan-search`: authenticated historical scan-metadata search through `GET /api/v1/search/`; no URL submission or result-body retrieval.
+5. `shodan-host-search`: authenticated page-one search of Shodan's existing host index; no scan request, stream, exploit search, or refresh operation.
 
-Future adapters, subject to a fresh terms/security review, are Cert Spotter for capped CT metadata, IANA-bootstrapped RDAP, metadata-only Wayback CDX, authenticated GitHub code search, and explicit-name DNS-over-HTTPS. None of these future candidates is represented as implemented in v0.1.
+Future adapters, subject to a fresh terms/security review, are Cert Spotter for capped CT metadata, IANA-bootstrapped RDAP, metadata-only Wayback CDX, authenticated GitHub code search, and explicit-name DNS-over-HTTPS. None of these future candidates is represented as implemented in v0.2.
 
 Suffix-wide projects such as `*.uz` should therefore remain primarily a **query-planning** exercise. They may compile low-risk browser queries after a visible warning, but automatic CT/archive/GitHub/DNS collection stays disabled. RDAP applies to a registrable domain, not to the suffix itself.
 
@@ -211,5 +213,5 @@ Provider policies and APIs are more volatile than the core application. Before r
 ## Primary-source index
 
 - Tool repositories: [Amass](https://github.com/owasp-amass/amass), [Subfinder](https://github.com/projectdiscovery/subfinder), [theHarvester](https://github.com/laramies/theHarvester), [SpiderFoot](https://github.com/smicallef/spiderfoot), [BBOT](https://github.com/blacklanternsecurity/bbot), [Cert Spotter](https://github.com/SSLMate/certspotter), [Recon-ng](https://github.com/lanmaster53/recon-ng), [reNgine](https://github.com/yogeshojha/rengine), [pagodo](https://github.com/opsdisk/pagodo), [SearXNG](https://github.com/searxng/searxng), [DefectDojo](https://github.com/DefectDojo/django-DefectDojo), [Dradis CE](https://github.com/dradis/dradis-ce), and [Faraday](https://github.com/infobyte/faraday).
-- General search providers: [Brave Web Search API](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started), [Mojeek Search API](https://www.mojeek.com/support/api/search/), [Google Custom Search JSON API status](https://developers.google.com/custom-search/v1/overview), [Microsoft Bing API retirement](https://learn.microsoft.com/en-us/lifecycle/announcements/bing-search-api-retirement), and [DuckDuckGo search syntax](https://duckduckgo.com/duckduckgo-help-pages/results/syntax).
+- General and passive-intelligence providers: [Brave Web Search API](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started), [URLScan Search endpoint](https://docs.urlscan.io/apis/urlscan-openapi/search), [URLScan search fields](https://docs.urlscan.io/pages/search-api-reference), [Shodan REST API](https://developer.shodan.io/api), [Mojeek Search API](https://www.mojeek.com/support/api/search/), [Google Custom Search JSON API status](https://developers.google.com/custom-search/v1/overview), [Microsoft Bing API retirement](https://learn.microsoft.com/en-us/lifecycle/announcements/bing-search-api-retirement), and [DuckDuckGo search syntax](https://duckduckgo.com/duckduckgo-help-pages/results/syntax).
 - Enrichment providers: [Cert Spotter CT Search API](https://sslmate.com/help/reference/ct_search_api_v1), [GitHub REST Search API](https://docs.github.com/en/rest/search/search), [Internet Archive CDX server](https://github.com/internetarchive/wayback/blob/master/wayback-cdx-server/README.md), [ICANN RDAP](https://www.icann.org/rdap/), [IANA RDAP DNS bootstrap](https://data.iana.org/rdap/dns.json), [Cloudflare DoH](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/), and [Google Public DNS DoH](https://developers.google.com/speed/public-dns/docs/doh).

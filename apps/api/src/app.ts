@@ -19,14 +19,17 @@ import {
   BraveSearchProvider,
   MockProvider,
   ProviderError,
+  ShodanSearchProvider,
+  UrlscanSearchProvider,
   type PassiveProvider,
+  type PassiveProviderId,
 } from './providers.js';
 
 const runRequestSchema = z.object({
   scope: z.string().min(3).max(253),
   exclusions: z.array(z.string().min(3).max(253)).max(25).default([]),
   templateIds: z.array(z.string().min(1).max(100)).min(1).max(20),
-  provider: z.enum(['mock', 'brave']),
+  provider: z.enum(['mock', 'brave', 'urlscan', 'shodan']),
   maximumResults: z.number().int().min(1).max(100).default(50),
   authorizationConfirmed: z.boolean().default(false),
   authorizationStatement: z.string().min(20).max(1000),
@@ -38,7 +41,7 @@ type RunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 interface RunRecord {
   id: string;
   status: RunStatus;
-  provider: 'mock' | 'brave';
+  provider: PassiveProviderId;
   scope: ParsedScope;
   queryCount: number;
   completedQueries: number;
@@ -51,7 +54,7 @@ interface RunRecord {
 }
 
 interface BuildOptions {
-  providers?: Partial<Record<'mock' | 'brave', PassiveProvider>>;
+  providers?: Partial<Record<PassiveProviderId, PassiveProvider>>;
 }
 
 export async function buildApp(
@@ -68,7 +71,11 @@ export async function buildApp(
         paths: [
           'req.headers.authorization',
           'req.headers.x-subscription-token',
+          'req.headers.api-key',
           '*.apiKey',
+          '*.braveApiKey',
+          '*.urlscanApiKey',
+          '*.shodanApiKey',
           '*.accessToken',
           '*.findings',
           '*.snippet',
@@ -107,12 +114,23 @@ export async function buildApp(
   const runs = new Map<string, RunRecord>();
   const principalLimiter = new FixedWindowLimiter(config.rateLimitMax, 60_000);
   const runStartLimiter = new FixedWindowLimiter(5, 60 * 60 * 1000);
-  const providerDailyBudget = new FixedWindowLimiter(200, 24 * 60 * 60 * 1000);
-  const providers: Record<'mock' | 'brave', PassiveProvider> = {
+  const providers: Record<PassiveProviderId, PassiveProvider> = {
     mock: options.providers?.mock ?? new MockProvider(),
     brave:
       options.providers?.brave ??
       new BraveSearchProvider(config.braveApiKey, config.providerTimeoutMs),
+    urlscan:
+      options.providers?.urlscan ??
+      new UrlscanSearchProvider(config.urlscanApiKey, config.providerTimeoutMs),
+    shodan:
+      options.providers?.shodan ??
+      new ShodanSearchProvider(config.shodanApiKey, config.providerTimeoutMs),
+  };
+  const providerDailyBudgets: Record<PassiveProviderId, FixedWindowLimiter> = {
+    mock: new FixedWindowLimiter(config.providerDailyQueryLimits.mock, 24 * 60 * 60 * 1000),
+    brave: new FixedWindowLimiter(config.providerDailyQueryLimits.brave, 24 * 60 * 60 * 1000),
+    urlscan: new FixedWindowLimiter(config.providerDailyQueryLimits.urlscan, 24 * 60 * 60 * 1000),
+    shodan: new FixedWindowLimiter(config.providerDailyQueryLimits.shodan, 24 * 60 * 60 * 1000),
   };
 
   app.get('/health', () => ({
@@ -238,7 +256,7 @@ export async function buildApp(
         .code(429)
         .send({ error: 'Owner run-start budget exceeded.', code: 'RUN_START_BUDGET' });
     }
-    if (!providerDailyBudget.take(provider.id, Date.now(), queries.length)) {
+    if (!providerDailyBudgets[provider.id].take('global', Date.now(), queries.length)) {
       return reply.code(429).send({
         error: 'The provider daily query budget is exhausted.',
         code: 'PROVIDER_DAILY_BUDGET',

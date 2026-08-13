@@ -157,7 +157,7 @@ export function Layout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <footer>
-          <span>ReconForge Web v0.1.0</span>
+          <span>ReconForge Web v0.2.0</span>
           <span>Findings are leads, not proof of vulnerability.</span>
         </footer>
       </div>
