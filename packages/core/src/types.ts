@@ -14,6 +14,8 @@ export const providerIdSchema = z.enum([
   'bing-link',
   'duckduckgo-link',
   'brave',
+  'urlscan',
+  'shodan',
   'mock',
 ]);
 export type ProviderId = z.infer<typeof providerIdSchema>;

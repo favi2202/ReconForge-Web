@@ -1,6 +1,6 @@
 {
   "name": "@reconforge/templates",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -18,6 +18,6 @@
     "test": "vitest run src"
   },
   "dependencies": {
-    "@reconforge/core": "0.1.0"
+    "@reconforge/core": "0.2.0"
   }
 }

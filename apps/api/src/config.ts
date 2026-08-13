@@ -27,6 +27,8 @@ const configSchema = z
     CONNECTED_MODE: booleanString,
     APP_ACCESS_TOKEN: optionalSecret(32),
     BRAVE_SEARCH_API_KEY: optionalSecret(16),
+    URLSCAN_API_KEY: optionalSecret(16),
+    SHODAN_API_KEY: optionalSecret(16),
     CORS_ALLOWLIST: z.string().default('http://localhost:5173'),
     API_HOST: z.string().default('127.0.0.1'),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
@@ -34,6 +36,9 @@ const configSchema = z
     RUN_QUERY_LIMIT: z.coerce.number().int().min(1).max(40).default(20),
     RUN_RESULT_LIMIT: z.coerce.number().int().min(1).max(500).default(100),
     PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1000).max(30000).default(8000),
+    BRAVE_DAILY_QUERY_LIMIT: z.coerce.number().int().min(1).max(10000).default(200),
+    URLSCAN_DAILY_QUERY_LIMIT: z.coerce.number().int().min(1).max(10000).default(100),
+    SHODAN_DAILY_QUERY_LIMIT: z.coerce.number().int().min(1).max(10000).default(25),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
@@ -80,6 +85,8 @@ export interface ApiConfig {
   connectedMode: boolean;
   accessToken?: string;
   braveApiKey?: string;
+  urlscanApiKey?: string;
+  shodanApiKey?: string;
   corsAllowlist: string[];
   host: string;
   port: number;
@@ -87,6 +94,7 @@ export interface ApiConfig {
   runQueryLimit: number;
   runResultLimit: number;
   providerTimeoutMs: number;
+  providerDailyQueryLimits: Record<'mock' | 'brave' | 'urlscan' | 'shodan', number>;
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 }
 
@@ -96,6 +104,8 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     connectedMode: value.CONNECTED_MODE,
     ...(value.APP_ACCESS_TOKEN ? { accessToken: value.APP_ACCESS_TOKEN } : {}),
     ...(value.BRAVE_SEARCH_API_KEY ? { braveApiKey: value.BRAVE_SEARCH_API_KEY } : {}),
+    ...(value.URLSCAN_API_KEY ? { urlscanApiKey: value.URLSCAN_API_KEY } : {}),
+    ...(value.SHODAN_API_KEY ? { shodanApiKey: value.SHODAN_API_KEY } : {}),
     corsAllowlist: value.CORS_ALLOWLIST.split(',')
       .map((item) => item.trim())
       .filter(Boolean),
@@ -105,6 +115,12 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     runQueryLimit: value.RUN_QUERY_LIMIT,
     runResultLimit: value.RUN_RESULT_LIMIT,
     providerTimeoutMs: value.PROVIDER_TIMEOUT_MS,
+    providerDailyQueryLimits: {
+      mock: 200,
+      brave: value.BRAVE_DAILY_QUERY_LIMIT,
+      urlscan: value.URLSCAN_DAILY_QUERY_LIMIT,
+      shodan: value.SHODAN_DAILY_QUERY_LIMIT,
+    },
     logLevel: value.LOG_LEVEL,
   };
 }

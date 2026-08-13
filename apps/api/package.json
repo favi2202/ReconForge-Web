@@ -1,6 +1,6 @@
 {
   "name": "@reconforge/api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -16,8 +16,8 @@
     "@fastify/cors": "^11.1.0",
     "@fastify/helmet": "^13.0.1",
     "@fastify/rate-limit": "^10.3.0",
-    "@reconforge/core": "0.1.0",
-    "@reconforge/templates": "0.1.0",
+    "@reconforge/core": "0.2.0",
+    "@reconforge/templates": "0.2.0",
     "fastify": "^5.5.0",
     "zod": "^4.0.17"
   }

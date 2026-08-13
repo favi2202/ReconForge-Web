@@ -23,7 +23,7 @@ import { useProject } from '../state/project-store.js';
 
 export function RunPage() {
   const { project, mutateProject } = useProject();
-  const [provider, setProvider] = useState<'mock' | 'brave'>('mock');
+  const [provider, setProvider] = useState<'mock' | 'brave' | 'urlscan' | 'shodan'>('mock');
   const [confirmed, setConfirmed] = useState(false);
   const [run, setRun] = useState<ConnectedRun | null>(() => readStoredRun());
   const [error, setError] = useState('');
@@ -208,10 +208,14 @@ export function RunPage() {
             Provider
             <select
               value={provider}
-              onChange={(event) => setProvider(event.target.value as 'mock' | 'brave')}
+              onChange={(event) =>
+                setProvider(event.target.value as 'mock' | 'brave' | 'urlscan' | 'shodan')
+              }
             >
               <option value="mock">Synthetic mock (offline)</option>
               <option value="brave">Brave Search API</option>
+              <option value="urlscan">URLScan historical search</option>
+              <option value="shodan">Shodan host search</option>
             </select>
           </label>
           <label className="check-row">

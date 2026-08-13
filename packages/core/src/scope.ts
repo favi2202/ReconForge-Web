@@ -115,6 +115,19 @@ function isIpv4(value: string): boolean {
 }
 
 export function compileScopeSyntax(scope: ParsedScope, provider: ProviderId): string {
+  if (provider === 'urlscan') {
+    const base =
+      scope.type === 'exact-domain'
+        ? `page.domain.keyword:${scope.value}`
+        : `page.domain:${scope.value}`;
+    const exclusions = scope.exclusions.map((host) => `NOT page.domain:${host}`).join(' ');
+    return [base, exclusions].filter(Boolean).join(' ');
+  }
+  if (provider === 'shodan') {
+    const base = `hostname:${scope.value}`;
+    const exclusions = scope.exclusions.map((host) => `-hostname:${host}`).join(' ');
+    return [base, exclusions].filter(Boolean).join(' ');
+  }
   // Search engines do not offer an authoritative exact-host filter. Keep the
   // query as narrow as each syntax permits, then enforce the same scope again
   // with isUrlInScope before any evidence is accepted.
@@ -125,8 +138,7 @@ export function compileScopeSyntax(scope: ParsedScope, provider: ProviderId): st
         ? `(site:${scope.value} OR site:*.${scope.value})`
         : `site:*.${scope.value}`;
   const exclusions = scope.exclusions.map((host) => `-site:${host}`).join(' ');
-  const providerBase = provider === 'duckduckgo-link' ? base : base;
-  return [providerBase, exclusions].filter(Boolean).join(' ');
+  return [base, exclusions].filter(Boolean).join(' ');
 }
 
 export function isHostnameWithinBoundary(hostname: string, scope: ParsedScope): boolean {

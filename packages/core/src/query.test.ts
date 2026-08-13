@@ -125,6 +125,31 @@ describe('query compiler', () => {
     expect(compiled?.query).toBe('"sub.example.com" site:github.com');
   });
 
+  it('compiles provider-native URLScan and Shodan scope filters', () => {
+    const urlscanTemplate = { ...base, providers: ['urlscan' as const], template: '{{scope}}' };
+    const shodanTemplate = {
+      ...base,
+      id: 'shodan-test',
+      providers: ['shodan' as const],
+      template: '{{scope}}',
+    };
+    expect(
+      compileQueries(parseScope('sub.example.com'), [urlscanTemplate], {
+        provider: 'urlscan',
+      })[0]?.query,
+    ).toBe('page.domain.keyword:sub.example.com');
+    expect(
+      compileQueries(parseScope('*.example.com', ['legacy.example.com']), [urlscanTemplate], {
+        provider: 'urlscan',
+      })[0]?.query,
+    ).toBe('page.domain:example.com NOT page.domain:legacy.example.com');
+    expect(
+      compileQueries(parseScope('*.example.com', ['legacy.example.com']), [shodanTemplate], {
+        provider: 'shodan',
+      })[0]?.query,
+    ).toBe('hostname:example.com -hostname:legacy.example.com');
+  });
+
   it('encodes browser deep links and rejects mock links', () => {
     expect(browserSearchUrl('bing-link', 'site:example.com test')).toBe(
       'https://www.bing.com/search?q=site%3Aexample.com%20test',

@@ -2,6 +2,14 @@
 
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use semantic versioning.
 
+## [0.2.0] - 2026-08-13
+
+### Added
+
+- Optional server-side URLScan Search API adapter for existing historical scan metadata; URL submission is deliberately not implemented.
+- Optional server-side Shodan Host Search API adapter for existing service observations; on-demand scanning is deliberately not implemented.
+- Provider-native scope compilation, structured subject-host enforcement, per-provider daily budgets, fixed-origin evidence links, and mocked integration/security tests for both adapters.
+
 ## [0.1.0] - 2026-08-13
 
 ### Added
