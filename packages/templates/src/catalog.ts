@@ -1,0 +1,494 @@
+import type {
+  ProviderId,
+  QueryPack,
+  QueryTemplate,
+  ReviewPriority,
+  SafetyLevel,
+  ScopeType,
+} from '@reconforge/core';
+
+const ALL_PROVIDERS: ProviderId[] = [
+  'google-link',
+  'bing-link',
+  'duckduckgo-link',
+  'brave',
+  'mock',
+];
+const EXACT: ScopeType[] = ['exact-domain'];
+const DOMAIN_SCOPES: ScopeType[] = ['exact-domain', 'subdomain-tree'];
+const ALL_SCOPES: ScopeType[] = ['exact-domain', 'subdomain-tree', 'public-suffix'];
+
+interface TemplateSeed {
+  id: string;
+  packId: string;
+  name: string;
+  description: string;
+  category: string;
+  scopes: ScopeType[];
+  template: string;
+  tags: string[];
+  priority?: ReviewPriority;
+  safety?: SafetyLevel;
+  authorization?: boolean;
+  resultPolicy?: QueryTemplate['resultPolicy'];
+  resultHostAllowlist?: string[];
+  explanation: string;
+}
+
+function make(seed: TemplateSeed): QueryTemplate {
+  return {
+    id: seed.id,
+    packId: seed.packId,
+    name: seed.name,
+    description: seed.description,
+    category: seed.category,
+    supportedScopeTypes: seed.scopes,
+    providers: ALL_PROVIDERS,
+    template: seed.template,
+    variables: [...seed.template.matchAll(/\{\{([^}]+)\}\}/gu)].map((match) => match[1] ?? ''),
+    tags: seed.tags,
+    reviewPriority: seed.priority ?? 'low',
+    explanation: seed.explanation,
+    safetyLevel: seed.safety ?? 'low',
+    requiresExplicitAuthorization: seed.authorization ?? false,
+    resultPolicy: seed.resultPolicy ?? 'in-scope',
+    resultHostAllowlist: seed.resultHostAllowlist ?? [],
+  };
+}
+
+export const templates: QueryTemplate[] = [
+  make({
+    id: 'domain-indexed-hosts',
+    packId: 'domain-discovery',
+    name: 'Indexed hosts',
+    description: 'Find indexed pages within the selected hostname boundary.',
+    category: 'domain-discovery',
+    scopes: ALL_SCOPES,
+    template: '{{scope}}',
+    tags: ['inventory', 'index'],
+    explanation: 'Creates a baseline view of pages the search engine associates with the scope.',
+  }),
+  make({
+    id: 'domain-www-exclusion',
+    packId: 'domain-discovery',
+    name: 'Non-www hostnames',
+    description: 'Surface indexed hosts other than the common www hostname.',
+    category: 'domain-discovery',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} -site:www.{{domain}}',
+    tags: ['subdomain', 'inventory'],
+    explanation: 'Excluding www often highlights distinct application and service hostnames.',
+  }),
+  make({
+    id: 'domain-environment-labels',
+    packId: 'domain-discovery',
+    name: 'Environment labels',
+    description: 'Look for conventional public environment names without probing them.',
+    category: 'domain-discovery',
+    scopes: EXACT,
+    template: '{{scope}} (inurl:dev OR inurl:staging OR inurl:test)',
+    tags: ['environment', 'inventory'],
+    priority: 'medium',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Flags indexed URLs containing common non-production labels as leads for authorized review.',
+  }),
+  make({
+    id: 'docs-common-types',
+    packId: 'public-documents',
+    name: 'Common public documents',
+    description: 'Locate common document formats intentionally indexed in scope.',
+    category: 'documents',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} (filetype:pdf OR filetype:docx OR filetype:pptx OR filetype:xlsx)',
+    tags: ['documents', 'public-files'],
+    explanation:
+      'Builds a review list of indexed documents; it does not download or inspect their contents.',
+  }),
+  make({
+    id: 'docs-policy-reports',
+    packId: 'public-documents',
+    name: 'Policies and reports',
+    description: 'Find public reports, policies, and publications.',
+    category: 'documents',
+    scopes: ALL_SCOPES,
+    template: '{{scope}} ("annual report" OR "policy" OR "publication") filetype:pdf',
+    tags: ['documents', 'governance'],
+    explanation: 'Targets likely public organizational documents for inventory and brand research.',
+  }),
+  make({
+    id: 'api-openapi',
+    packId: 'api-docs',
+    name: 'API documentation',
+    description: 'Find indexed API documentation pages.',
+    category: 'developer-surface',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} (intitle:"API documentation" OR inurl:docs/api OR inurl:openapi)',
+    tags: ['api', 'documentation'],
+    priority: 'medium',
+    explanation: 'Surfaces public developer documentation that may clarify supported integrations.',
+  }),
+  make({
+    id: 'api-graphql-docs',
+    packId: 'api-docs',
+    name: 'GraphQL references',
+    description: 'Find public GraphQL documentation references.',
+    category: 'developer-surface',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} ("GraphQL" OR "GraphiQL")',
+    tags: ['api', 'graphql'],
+    priority: 'medium',
+    explanation: 'Identifies indexed documentation mentioning GraphQL; no endpoint is contacted.',
+  }),
+  make({
+    id: 'admin-login-pages',
+    packId: 'admin-surface',
+    name: 'Login surfaces',
+    description: 'Identify indexed sign-in and administration pages for an exact authorized host.',
+    category: 'administrative-surface',
+    scopes: EXACT,
+    template: '{{scope}} (intitle:"sign in" OR intitle:"log in" OR inurl:login OR inurl:admin)',
+    tags: ['login', 'admin'],
+    priority: 'high',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Creates a manual-review inventory of public login surfaces; it never submits credentials.',
+  }),
+  make({
+    id: 'errors-disclosure',
+    packId: 'error-disclosure',
+    name: 'Indexed error messages',
+    description: 'Find indexed pages containing generic error and stack terminology.',
+    category: 'technology-disclosure',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} ("stack trace" OR "unexpected error" OR "exception")',
+    tags: ['errors', 'technology'],
+    priority: 'medium',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Highlights indexed error-language leads that require careful, authorized validation.',
+  }),
+  make({
+    id: 'errors-powered-by',
+    packId: 'error-disclosure',
+    name: 'Technology markers',
+    description: 'Find public pages declaring platform or framework markers.',
+    category: 'technology-disclosure',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} ("powered by" OR "built with")',
+    tags: ['technology', 'fingerprint'],
+    explanation: 'Collects self-declared technology references without active fingerprinting.',
+  }),
+  make({
+    id: 'directory-index',
+    packId: 'directory-indicators',
+    name: 'Directory listing indicators',
+    description: 'Find indexed pages whose title resembles a directory index.',
+    category: 'directory-indicator',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} intitle:"index of"',
+    tags: ['directory', 'listing'],
+    priority: 'medium',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Flags possible public directory listing pages as leads; no child files are retrieved.',
+  }),
+  make({
+    id: 'backup-filenames',
+    packId: 'backup-config',
+    name: 'Backup filename indicators',
+    description: 'Find indexed pages that mention conventional backup suffixes.',
+    category: 'backup-indicator',
+    scopes: EXACT,
+    template:
+      '{{scope}} (inurl:backup OR inurl:archive OR inurl:old) (filetype:zip OR filetype:tar OR filetype:gz)',
+    tags: ['backup', 'filename'],
+    priority: 'high',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Identifies indexed filename patterns only; ReconForge never downloads candidate archives.',
+  }),
+  make({
+    id: 'config-filenames',
+    packId: 'backup-config',
+    name: 'Configuration filename indicators',
+    description: 'Find references to common configuration filenames on an exact authorized host.',
+    category: 'configuration-indicator',
+    scopes: EXACT,
+    template:
+      '{{scope}} (inurl:config OR inurl:settings) (filetype:json OR filetype:xml OR filetype:txt)',
+    tags: ['configuration', 'filename'],
+    priority: 'high',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Produces candidate indexed pages for manual authorization review without retrieving files.',
+  }),
+  make({
+    id: 'cloud-storage-references',
+    packId: 'cloud-references',
+    name: 'Cloud hosting references',
+    description: 'Find references to common public cloud-storage hostnames.',
+    category: 'third-party-hosting',
+    scopes: DOMAIN_SCOPES,
+    template:
+      '"{{domain}}" (site:s3.amazonaws.com OR site:storage.googleapis.com OR site:blob.core.windows.net)',
+    tags: ['cloud', 'third-party'],
+    priority: 'medium',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Searches public references containing the exact authorized domain; it does not enumerate buckets.',
+    resultPolicy: 'fixed-hosts',
+    resultHostAllowlist: ['s3.amazonaws.com', 'storage.googleapis.com', 'blob.core.windows.net'],
+  }),
+  make({
+    id: 'source-code-references',
+    packId: 'source-references',
+    name: 'Public code references',
+    description: 'Find public source-code pages mentioning the exact authorized domain.',
+    category: 'source-reference',
+    scopes: EXACT,
+    template: '"{{domain}}" (site:github.com OR site:gitlab.com)',
+    tags: ['source-code', 'third-party'],
+    priority: 'medium',
+    safety: 'guarded',
+    authorization: true,
+    explanation:
+      'Identifies public code references for manual review; it does not clone repositories or search for credentials.',
+    resultPolicy: 'fixed-hosts',
+    resultHostAllowlist: ['github.com', 'gitlab.com'],
+  }),
+  make({
+    id: 'archive-references',
+    packId: 'historical',
+    name: 'Archived URL references',
+    description: 'Find public index references to historical copies.',
+    category: 'historical',
+    scopes: DOMAIN_SCOPES,
+    template: '"{{domain}}" site:web.archive.org',
+    tags: ['archive', 'historical'],
+    explanation:
+      'Surfaces already indexed Internet Archive references without bulk CDX enumeration.',
+    resultPolicy: 'fixed-hosts',
+    resultHostAllowlist: ['web.archive.org'],
+  }),
+  make({
+    id: 'historical-cached-language',
+    packId: 'historical',
+    name: 'Historical page language',
+    description: 'Find pages discussing older versions or migrations.',
+    category: 'historical',
+    scopes: DOMAIN_SCOPES,
+    template: '{{scope}} ("previous version" OR "legacy" OR "migrated")',
+    tags: ['historical', 'migration'],
+    explanation: 'Builds context about historical public services and migrations.',
+  }),
+  make({
+    id: 'social-brand',
+    packId: 'social-brand',
+    name: 'Social and brand references',
+    description: 'Find social profiles and posts referring to the domain.',
+    category: 'brand-reference',
+    scopes: ALL_SCOPES,
+    template: '"{{domain}}" (site:linkedin.com OR site:x.com OR site:facebook.com)',
+    tags: ['brand', 'social'],
+    explanation: 'Finds third-party public references useful for brand-protection research.',
+    resultPolicy: 'fixed-hosts',
+    resultHostAllowlist: ['linkedin.com', 'x.com', 'facebook.com'],
+  }),
+  make({
+    id: 'brand-mentions',
+    packId: 'social-brand',
+    name: 'External domain mentions',
+    description: 'Find pages mentioning the domain outside its own site.',
+    category: 'brand-reference',
+    scopes: DOMAIN_SCOPES,
+    template: '"{{domain}}" -site:{{domain}}',
+    tags: ['brand', 'external-reference'],
+    explanation: 'Surfaces public third-party references to the exact domain string.',
+    resultPolicy: 'external-reference',
+  }),
+  make({
+    id: 'contact-pages',
+    packId: 'organization',
+    name: 'Contact pages',
+    description: 'Find public contact and organizational pages.',
+    category: 'organization',
+    scopes: ALL_SCOPES,
+    template: '{{scope}} (intitle:"contact" OR intitle:"about" OR intitle:"team")',
+    tags: ['contact', 'organization'],
+    explanation:
+      'Finds pages intended to describe the organization or its public contact channels.',
+  }),
+  make({
+    id: 'organizational-docs',
+    packId: 'organization',
+    name: 'Organizational publications',
+    description: 'Find public organizational structure and governance references.',
+    category: 'organization',
+    scopes: ALL_SCOPES,
+    template: '{{scope}} ("organization chart" OR "leadership" OR "governance")',
+    tags: ['organization', 'governance'],
+    explanation: 'Collects public organizational context without deriving private personal data.',
+  }),
+  make({
+    id: 'sensitive-indexed-secrets-language',
+    packId: 'sensitive-review',
+    name: 'Potential secret-language indicators',
+    description: 'Identify indexed pages containing generic credential-related language.',
+    category: 'sensitive-exposure-lead',
+    scopes: EXACT,
+    template: '{{scope}} ("api key" OR "access token" OR "private key")',
+    tags: ['sensitive-lead'],
+    priority: 'high',
+    safety: 'sensitive',
+    authorization: true,
+    explanation:
+      'A redacted lead requiring manual validation. ReconForge never extracts, validates, or downloads credentials.',
+  }),
+  make({
+    id: 'sensitive-environment-language',
+    packId: 'sensitive-review',
+    name: 'Environment configuration indicators',
+    description: 'Identify indexed pages that mention environment configuration terms.',
+    category: 'sensitive-exposure-lead',
+    scopes: EXACT,
+    template: '{{scope}} ("environment variable" OR "database connection")',
+    tags: ['sensitive-lead', 'configuration'],
+    priority: 'high',
+    safety: 'sensitive',
+    authorization: true,
+    explanation: 'A redacted indicator only; it does not retrieve configuration or secrets.',
+  }),
+];
+
+export const packs: QueryPack[] = [
+  {
+    id: 'domain-discovery',
+    name: 'Domain & subdomain discovery',
+    description: 'Baseline indexed-host and environment discovery.',
+    safetyLevel: 'low',
+    enabledByDefault: true,
+    templateIds: ['domain-indexed-hosts', 'domain-www-exclusion', 'domain-environment-labels'],
+  },
+  {
+    id: 'public-documents',
+    name: 'Indexed documents & public files',
+    description: 'Publicly indexed documents and publications.',
+    safetyLevel: 'low',
+    enabledByDefault: true,
+    templateIds: ['docs-common-types', 'docs-policy-reports'],
+  },
+  {
+    id: 'api-docs',
+    name: 'API & developer documentation',
+    description: 'Public developer and API documentation.',
+    safetyLevel: 'low',
+    enabledByDefault: true,
+    templateIds: ['api-openapi', 'api-graphql-docs'],
+  },
+  {
+    id: 'admin-surface',
+    name: 'Login & administrative surfaces',
+    description: 'Exact-scope login inventory.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: ['admin-login-pages'],
+  },
+  {
+    id: 'error-disclosure',
+    name: 'Errors & technology disclosure',
+    description: 'Indexed error language and technology markers.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: ['errors-disclosure', 'errors-powered-by'],
+  },
+  {
+    id: 'directory-indicators',
+    name: 'Public directory indicators',
+    description: 'Possible public directory listing titles.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: ['directory-index'],
+  },
+  {
+    id: 'backup-config',
+    name: 'Backup & configuration indicators',
+    description: 'Exact-scope filename indicators only.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: ['backup-filenames', 'config-filenames'],
+  },
+  {
+    id: 'cloud-references',
+    name: 'Cloud & third-party references',
+    description: 'Public references on common cloud hosts.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: ['cloud-storage-references'],
+  },
+  {
+    id: 'source-references',
+    name: 'Public source-code references',
+    description: 'Public repository pages mentioning the exact domain.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: ['source-code-references'],
+  },
+  {
+    id: 'historical',
+    name: 'Historical & archived URLs',
+    description: 'Search-indexed historical context.',
+    safetyLevel: 'low',
+    enabledByDefault: true,
+    templateIds: ['archive-references', 'historical-cached-language'],
+  },
+  {
+    id: 'social-brand',
+    name: 'Social media & brand references',
+    description: 'External brand and social mentions.',
+    safetyLevel: 'low',
+    enabledByDefault: true,
+    templateIds: ['social-brand', 'brand-mentions'],
+  },
+  {
+    id: 'organization',
+    name: 'Contact & organizational information',
+    description: 'Public contact, team, and governance pages.',
+    safetyLevel: 'low',
+    enabledByDefault: true,
+    templateIds: ['contact-pages', 'organizational-docs'],
+  },
+  {
+    id: 'visual-builder',
+    name: 'Custom visual query builder',
+    description: 'Compose a query from validated fields and allowed operators.',
+    safetyLevel: 'guarded',
+    enabledByDefault: false,
+    templateIds: [],
+  },
+  {
+    id: 'sensitive-review',
+    name: 'Sensitive Exposure Review',
+    description:
+      'Redacted exact-scope leads requiring explicit authorization and manual validation.',
+    safetyLevel: 'sensitive',
+    enabledByDefault: false,
+    templateIds: ['sensitive-indexed-secrets-language', 'sensitive-environment-language'],
+  },
+];
+
+export function templatesForPacks(packIds: string[]): QueryTemplate[] {
+  const selected = new Set(packIds);
+  return templates.filter((template) => selected.has(template.packId));
+}
+
+export function publicSuffixPackIds(): string[] {
+  return ['domain-discovery', 'public-documents', 'social-brand', 'organization'];
+}

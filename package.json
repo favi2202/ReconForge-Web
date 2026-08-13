@@ -1,0 +1,50 @@
+{
+  "name": "reconforge-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A defensive passive reconnaissance planner and analyst workspace.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @reconforge/web",
+    "dev:api": "npm run dev --workspace @reconforge/api",
+    "build:packages": "npm run build --workspace @reconforge/core && npm run build --workspace @reconforge/templates",
+    "build": "npm run build --workspace @reconforge/core && npm run build --workspace @reconforge/templates && npm run build --workspace @reconforge/api && npm run build --workspace @reconforge/web",
+    "build:pages": "npm run build:pages --workspace @reconforge/web",
+    "verify:release": "node scripts/verify-release.mjs",
+    "verify:licenses": "node scripts/verify-licenses.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npm run build --workspace @reconforge/web && node scripts/run-e2e.mjs",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "audit": "npm audit --audit-level=high"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@eslint/js": "^9.33.0",
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4"
+  }
+}
