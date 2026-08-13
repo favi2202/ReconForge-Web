@@ -1,0 +1,23 @@
+{
+  "name": "@reconforge/web",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build:pages": "tsc -p tsconfig.json --noEmit && vite build --base=/ReconForge-Web/",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run src"
+  },
+  "dependencies": {
+    "@reconforge/core": "0.1.0",
+    "@reconforge/templates": "0.1.0",
+    "idb-keyval": "^6.2.2",
+    "lucide-react": "^0.539.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.0"
+  }
+}
