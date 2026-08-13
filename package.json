@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @reconforge/web",
     "dev:api": "npm run dev --workspace @reconforge/api",
+    "build:packages": "npm run build --workspace @reconforge/core && npm run build --workspace @reconforge/templates",
     "build": "npm run build --workspace @reconforge/core && npm run build --workspace @reconforge/templates && npm run build --workspace @reconforge/api && npm run build --workspace @reconforge/web",
     "build:pages": "npm run build:pages --workspace @reconforge/web",
     "verify:release": "node scripts/verify-release.mjs",
