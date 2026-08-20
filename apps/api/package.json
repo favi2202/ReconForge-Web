@@ -18,7 +18,7 @@
     "@fastify/rate-limit": "^10.3.0",
     "@reconforge/core": "0.2.0",
     "@reconforge/templates": "0.2.0",
-    "fastify": "^5.5.0",
+    "fastify": "^5.12.0",
     "zod": "^4.0.17"
   }
 }
