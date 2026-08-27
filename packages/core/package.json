@@ -18,7 +18,7 @@
     "test": "vitest run src"
   },
   "dependencies": {
-    "tldts": "^7.0.14",
+    "tldts": "^7.4.11",
     "zod": "^4.0.17"
   }
 }
