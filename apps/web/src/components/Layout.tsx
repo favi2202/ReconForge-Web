@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Wrench,
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -21,6 +22,7 @@ const nav = [
   ['/new', 'New project', PlayCircle],
   ['/planner', 'Query planner', Radar],
   ['/run', 'Live run', Search],
+  ['/local-tools', 'Local tools', Wrench],
   ['/results', 'Results', Boxes],
   ['/reports', 'Reports', FileOutput],
   ['/templates', 'Templates', BookOpen],
