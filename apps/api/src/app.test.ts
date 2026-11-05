@@ -7,6 +7,7 @@ import type { PassiveProvider } from './providers.js';
 const token = 'test-owner-token-that-is-longer-than-32-chars';
 const baseConfig: ApiConfig = {
   connectedMode: true,
+  localToolsEnabled: false,
   accessToken: token,
   corsAllowlist: ['https://planner.example.test'],
   host: '127.0.0.1',
@@ -15,6 +16,7 @@ const baseConfig: ApiConfig = {
   runQueryLimit: 10,
   runResultLimit: 30,
   providerTimeoutMs: 500,
+  localToolTimeoutMs: 5000,
   providerDailyQueryLimits: { mock: 200, brave: 200, urlscan: 100, shodan: 25 },
   logLevel: 'silent',
 };
