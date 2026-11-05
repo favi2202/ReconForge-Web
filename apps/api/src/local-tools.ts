@@ -321,6 +321,8 @@ async function executePipeline(record: LocalRunRecord, config: ApiConfig): Promi
           '-jsonl',
           '-severity',
           'low,medium,high,critical',
+          '-exclude-tags',
+          'dos,fuzz,bruteforce',
           '-rate-limit',
           '5',
           '-timeout',
