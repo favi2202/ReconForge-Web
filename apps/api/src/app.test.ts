@@ -62,6 +62,46 @@ describe('connected API security contract', () => {
     ).toBe(200);
   });
 
+  it('keeps local tools opt-in and rejects broad active scopes', async () => {
+    const headers = { authorization: `Bearer ${token}` };
+    const disabled = await app();
+    const health = await disabled.inject({ method: 'GET', url: '/v1/tools', headers });
+    expect(health.statusCode).toBe(200);
+    expect(health.json().enabled).toBe(false);
+    expect(health.json().tools).toHaveLength(4);
+
+    const denied = await disabled.inject({
+      method: 'POST',
+      url: '/v1/local-runs',
+      headers,
+      payload: {
+        scope: 'example.com',
+        exclusions: [],
+        profile: 'quick',
+        authorizationConfirmed: true,
+        authorizationStatement: 'Authorized local tool test for example.com only.',
+      },
+    });
+    expect(denied.statusCode).toBe(503);
+    expect(denied.json().code).toBe('LOCAL_TOOLS_DISABLED');
+
+    const enabled = await app({ ...baseConfig, localToolsEnabled: true });
+    const broad = await enabled.inject({
+      method: 'POST',
+      url: '/v1/local-runs',
+      headers,
+      payload: {
+        scope: '*.uz',
+        exclusions: [],
+        profile: 'quick',
+        authorizationConfirmed: true,
+        authorizationStatement: 'Authorized test verifies broad active execution stays blocked.',
+      },
+    });
+    expect(broad.statusCode).toBe(400);
+    expect(broad.json().code).toBe('BROAD_SCOPE_EXECUTION_DISABLED');
+  });
+
   it('enforces the exact CORS allowlist', async () => {
     const instance = await app();
     const allowed = await instance.inject({
