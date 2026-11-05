@@ -5,6 +5,14 @@ import { defineConfig } from 'vite';
 
 const repositoryFile = (name: string) => fileURLToPath(new URL(`../../${name}`, import.meta.url));
 
+const devStyleCsp = () => ({
+  name: 'reconforge-dev-style-csp',
+  transformIndexHtml(html: string, context: { server?: unknown }) {
+    if (!context.server) return html;
+    return html.replace("style-src 'self';", "style-src 'self' 'unsafe-inline';");
+  },
+});
+
 const releaseNotices = () => ({
   name: 'reconforge-release-notices',
   async closeBundle() {
@@ -18,7 +26,7 @@ const releaseNotices = () => ({
 });
 
 export default defineConfig({
-  plugins: [react(), releaseNotices()],
+  plugins: [devStyleCsp(), react(), releaseNotices()],
   server: { host: '127.0.0.1', port: 5173 },
   preview: { host: '127.0.0.1', port: 4173 },
   build: {
