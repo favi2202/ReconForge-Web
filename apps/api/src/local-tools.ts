@@ -593,6 +593,15 @@ function ownerKey(request: FastifyRequest): string {
   return createHash('sha256').update(token).digest('hex').slice(0, 16);
 }
 
+function safeError(error: unknown): string {
+  if (error instanceof Error) {
+    if (/cancel/iu.test(error.message)) return 'Local run was cancelled.';
+    if (/timeout/iu.test(error.message)) return 'Local tool exceeded its execution timeout.';
+    if (/output limit/iu.test(error.message)) return 'Local tool exceeded its output limit.';
+  }
+  return 'Local tool execution failed.';
+}
+
 function trimRuns(runs: Map<string, LocalRunRecord>): void {
   const expiry = Date.now() - 60 * 60 * 1000;
   for (const run of runs.values()) {
