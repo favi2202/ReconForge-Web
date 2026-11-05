@@ -66,7 +66,7 @@ interface LocalRun {
 
 export function LocalToolsPage() {
   const { project } = useProject();
-  const settings = loadConnectedSettings();
+  const [settings] = useState(() => loadConnectedSettings());
   const configured = Boolean(settings.apiUrl && settings.token);
   const [health, setHealth] = useState<ToolHealth | null>(null);
   const [run, setRun] = useState<LocalRun | null>(null);
