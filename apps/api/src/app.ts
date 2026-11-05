@@ -15,6 +15,7 @@ import { templates } from '@reconforge/templates';
 import Fastify, { LogController, type FastifyInstance, type FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { ApiConfig } from './config.js';
+import { registerLocalToolRoutes } from './local-tools.js';
 import {
   BraveSearchProvider,
   MockProvider,
@@ -301,6 +302,8 @@ export async function buildApp(
     }
     return reply.code(202).send(runView(record));
   });
+
+  registerLocalToolRoutes(app, config);
 
   app.setErrorHandler((error, _request, reply) => {
     const candidateStatus =
