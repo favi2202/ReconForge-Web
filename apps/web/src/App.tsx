@@ -5,6 +5,7 @@ import { Button } from './components/ui.js';
 import { AboutPage } from './pages/AboutPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { NewProjectPage } from './pages/NewProjectPage.js';
+import { LocalToolsPage } from './pages/LocalToolsPage.js';
 import { PlannerPage } from './pages/PlannerPage.js';
 import { ReportsPage } from './pages/ReportsPage.js';
 import { ResultsPage } from './pages/ResultsPage.js';
@@ -22,6 +23,7 @@ export function App() {
           <Route path="/new" element={<NewProjectPage />} />
           <Route path="/planner" element={<PlannerPage />} />
           <Route path="/run" element={<RunPage />} />
+          <Route path="/local-tools" element={<LocalToolsPage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/templates" element={<TemplatesPage />} />

@@ -5,6 +5,7 @@ describe('API configuration', () => {
   it('defaults to disabled connected mode', () => {
     const config = loadConfig({});
     expect(config.connectedMode).toBe(false);
+    expect(config.localToolsEnabled).toBe(false);
     expect(config.providerDailyQueryLimits).toEqual({
       mock: 200,
       brave: 200,
@@ -28,6 +29,7 @@ describe('API configuration', () => {
 
   it('requires a long token when enabled and rejects wildcard CORS', () => {
     expect(() => loadConfig({ CONNECTED_MODE: 'true' })).toThrow();
+    expect(() => loadConfig({ LOCAL_TOOLS_ENABLED: 'true' })).toThrow('connected owner mode');
     expect(() => loadConfig({ CORS_ALLOWLIST: '*' })).toThrow();
     expect(
       loadConfig({

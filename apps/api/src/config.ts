@@ -25,6 +25,7 @@ const optionalSecret = (minimum: number) =>
 const configSchema = z
   .object({
     CONNECTED_MODE: booleanString,
+    LOCAL_TOOLS_ENABLED: booleanString,
     APP_ACCESS_TOKEN: optionalSecret(32),
     BRAVE_SEARCH_API_KEY: optionalSecret(16),
     URLSCAN_API_KEY: optionalSecret(16),
@@ -36,6 +37,7 @@ const configSchema = z
     RUN_QUERY_LIMIT: z.coerce.number().int().min(1).max(40).default(20),
     RUN_RESULT_LIMIT: z.coerce.number().int().min(1).max(500).default(100),
     PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1000).max(30000).default(8000),
+    LOCAL_TOOL_TIMEOUT_MS: z.coerce.number().int().min(5000).max(120000).default(30000),
     BRAVE_DAILY_QUERY_LIMIT: z.coerce.number().int().min(1).max(10000).default(200),
     URLSCAN_DAILY_QUERY_LIMIT: z.coerce.number().int().min(1).max(10000).default(100),
     SHODAN_DAILY_QUERY_LIMIT: z.coerce.number().int().min(1).max(10000).default(25),
@@ -49,6 +51,13 @@ const configSchema = z
         code: 'custom',
         path: ['APP_ACCESS_TOKEN'],
         message: 'Required when connected mode is enabled.',
+      });
+    }
+    if (value.LOCAL_TOOLS_ENABLED && !value.CONNECTED_MODE) {
+      context.addIssue({
+        code: 'custom',
+        path: ['LOCAL_TOOLS_ENABLED'],
+        message: 'Local tools require connected owner mode.',
       });
     }
     if (value.CORS_ALLOWLIST.split(',').some((origin) => origin.trim().includes('*'))) {
@@ -83,6 +92,7 @@ const configSchema = z
 
 export interface ApiConfig {
   connectedMode: boolean;
+  localToolsEnabled: boolean;
   accessToken?: string;
   braveApiKey?: string;
   urlscanApiKey?: string;
@@ -94,6 +104,7 @@ export interface ApiConfig {
   runQueryLimit: number;
   runResultLimit: number;
   providerTimeoutMs: number;
+  localToolTimeoutMs: number;
   providerDailyQueryLimits: Record<'mock' | 'brave' | 'urlscan' | 'shodan', number>;
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 }
@@ -102,6 +113,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
   const value = configSchema.parse(environment);
   return {
     connectedMode: value.CONNECTED_MODE,
+    localToolsEnabled: value.LOCAL_TOOLS_ENABLED,
     ...(value.APP_ACCESS_TOKEN ? { accessToken: value.APP_ACCESS_TOKEN } : {}),
     ...(value.BRAVE_SEARCH_API_KEY ? { braveApiKey: value.BRAVE_SEARCH_API_KEY } : {}),
     ...(value.URLSCAN_API_KEY ? { urlscanApiKey: value.URLSCAN_API_KEY } : {}),
@@ -115,6 +127,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     runQueryLimit: value.RUN_QUERY_LIMIT,
     runResultLimit: value.RUN_RESULT_LIMIT,
     providerTimeoutMs: value.PROVIDER_TIMEOUT_MS,
+    localToolTimeoutMs: value.LOCAL_TOOL_TIMEOUT_MS,
     providerDailyQueryLimits: {
       mock: 200,
       brave: value.BRAVE_DAILY_QUERY_LIMIT,
