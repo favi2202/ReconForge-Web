@@ -3,12 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { access } from 'node:fs/promises';
 import { delimiter, join } from 'node:path';
-import {
-  isHostnameInScope,
-  isUrlInScope,
-  parseScope,
-  type ParsedScope,
-} from '@reconforge/core';
+import { isHostnameInScope, isUrlInScope, parseScope, type ParsedScope } from '@reconforge/core';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { ApiConfig } from './config.js';
@@ -276,7 +271,9 @@ async function executePipeline(record: LocalRunRecord, config: ApiConfig): Promi
   if (installed.get('dnsx')) {
     try {
       const output = await runStage(record, 'dnsx', config, ['-silent'], hostnames.join('\n'));
-      const resolved = parseHostnameLines(output).filter((host) => isHostnameInScope(host, record.scope));
+      const resolved = parseHostnameLines(output).filter((host) =>
+        isHostnameInScope(host, record.scope),
+      );
       if (resolved.length) hostnames = unique(resolved).slice(0, 500);
       completeStage(record, 'dnsx', hostnames.length, 'Approved hostnames resolved.');
     } catch {
@@ -344,7 +341,9 @@ async function executePipeline(record: LocalRunRecord, config: ApiConfig): Promi
     skipStage(
       record,
       'nuclei',
-      installed.get('nuclei') ? 'No approved HTTP URLs were available.' : 'Nuclei is not installed.',
+      installed.get('nuclei')
+        ? 'No approved HTTP URLs were available.'
+        : 'Nuclei is not installed.',
     );
   }
 
@@ -544,7 +543,12 @@ function numberValue(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function completeStage(record: LocalRunRecord, id: LocalToolId, count: number, message: string): void {
+function completeStage(
+  record: LocalRunRecord,
+  id: LocalToolId,
+  count: number,
+  message: string,
+): void {
   const stage = stageFor(record, id);
   stage.status = 'completed';
   stage.itemCount = count;

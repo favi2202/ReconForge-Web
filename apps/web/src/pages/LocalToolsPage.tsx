@@ -108,7 +108,8 @@ export function LocalToolsPage() {
     );
   }
 
-  const blocked = project.scope.type === 'public-suffix' || Boolean(project.additionalScopes?.length);
+  const blocked =
+    project.scope.type === 'public-suffix' || Boolean(project.additionalScopes?.length);
 
   const poll = async (id: string) => {
     try {
@@ -167,7 +168,9 @@ export function LocalToolsPage() {
           <ShieldCheck />
           <div>
             <b>Owner API connection required</b>
-            <p>Configure the local API URL and owner token before using installed security tools.</p>
+            <p>
+              Configure the local API URL and owner token before using installed security tools.
+            </p>
           </div>
           <Link className="button button-secondary" to="/settings">
             Provider settings
@@ -366,10 +369,7 @@ export function LocalToolsPage() {
           </div>
           <div className="finding-card-grid">
             {run.findings.map((finding) => (
-              <Card
-                key={`${finding.templateId}|${finding.matchedAt}`}
-                className="finding-card"
-              >
+              <Card key={`${finding.templateId}|${finding.matchedAt}`} className="finding-card">
                 <div className="finding-card-head">
                   <Pill
                     tone={
